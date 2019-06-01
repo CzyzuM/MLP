@@ -30,16 +30,13 @@ def initLayerWeights(neuronCount, prevLayerNeuronCount):
     Funkcja inicjalizująca macierz wag połączeń między neuronami kolejnych warstw sieci oraz wektor bias-ów
     :param neuronCount: ilość neuronów w bieżącej warstwie
     :param prevLayerNeuronCount: ilość neuronów w poprzedniej warstwie
-    :return: krotka (W,B), gdzie W = macierz o wymiarach neuronCount x prevLayerNeuronCount 
-                            oraz B = wektor o wymiarach neuronCount x 1
+    :return: macierz wag o wymiarach neuronCount x prevLayerNeuronCount 
     """
     W = np.zeros(shape=(neuronCount,prevLayerNeuronCount))
-    B = np.zeros(shape=(neuronCount,1))
     for i in range(W.shape[0]):
         for j in range(W.shape[1]):
             W[i,j] = uniform(-1.0,1.0)
-        B[i] = uniform(-1.0,1.0)
-    return (W,B)
+    return W
 
 def sigmoid(x):
     """
@@ -56,16 +53,19 @@ def layer_response(prevLayerValues, weights):
     :param prevLayerValues: wektor neuronów poprzedniej warstwy
     :param weights: macierz wag połączeń między obecną a poprzednią warstwą (kolumna nr 1 to bias)
     :return: wektor odpowiedzi neuronów
-    """
-    prevLayerAndImaginaryBiasNeuron = np.append([1],prevLayerValues,axis = 0)
-    sum = [w@prevLayerAndImaginaryBiasNeuron for w in weights]
-    return sigmoid(sum)
+    """ 
+    return sigmoid(weights@prevLayerValues)
+
+def SumOfErrors(layerValues, expectedCategory):
+    expectedValues = np.zeros(shape=np.shape(layerValues))
+    expectedValues[expectedCategory] = 1
+    return np.sum(layerValues - expectedValues)
 
 def SSE(layerValues, expectedCategory):
     expectedValues = np.zeros(shape=np.shape(layerValues))
     expectedValues[expectedCategory] = 1
     errors = layerValues - expectedValues
-    return np.sum(errors*errors)
+    return np.sum(errors * errors)
 
 def predict_one_with_state(x, W_in_hidden, W_hidden_out):
     """
