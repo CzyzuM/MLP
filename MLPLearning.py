@@ -99,27 +99,43 @@ def gradient_descent_single_image(MLP_state, W_in_hidden, W_hidden_out, expected
         expectedValues[expectedCategory] = 1
         neuronErrors = output - expectedValues
         sumOfHigherLevel = np.transpose(W_hidden_out)[i] @ (neuronErrors * output * (np.ones(shape=np.shape(output))-output))
-        W_in_hidden_changes[i] *= np.full(shape = W_in_hidden_changes[1], fill_value = (sumOfHigherLevel)*ai*(1-ai)) * input
+        W_in_hidden_changes[i] *= np.full(shape = W_in_hidden_changes.shape[1], fill_value = ((sumOfHigherLevel)*ai*(1-ai))) * input
     return(W_in_hidden_changes,W_hidden_out_changes)
 
 def stochastic_gradient_descent( x_train, mini_batch_size, W_in_hidden, W_hidden_out ):
-    for i in range(np.shape(x_train)[0] / mini_batch_size):
+    image_counter = 0
+    for i in range(np.int(np.shape(x_train)[0] / mini_batch_size)):
+        error_accumulator = 0
         batch = x_train[ mini_batch_size*i : mini_batch_size*(i+1)-1 ]
         W_in_hidden_gradient_accumulator = np.zeros( shape = np.shape(W_in_hidden) )
         W_hidden_out_gradient_accumulator = np.ones( shape = np.shape(W_hidden_out) )
         for image in batch:
-            (a,b) = gradient_descent_single_image(MLP_response(image, W_in_hidden, W_hidden_out),W_in_hidden, W_hidden_out, expectedCategory)
+            (c,d,e) = MLP_response(image, W_in_hidden, W_hidden_out)
+            error_accumulator += SSE(e,y[image_counter])
+            (a,b) = gradient_descent_single_image(MLP_response(image, W_in_hidden, W_hidden_out),W_in_hidden, W_hidden_out, y[image_counter])
             W_in_hidden_gradient_accumulator += a
             W_hidden_out_gradient_accumulator += b
-        W_in_hidden -= W_in_hidden_gradient_accumulator / mini_batch_size
-        W_hidden_out-= W_hidden_out_gradient_accumulator / mini_batch_size
+            image_counter += 1
+        W_in_hidden -= (W_in_hidden_gradient_accumulator / mini_batch_size)
+        W_hidden_out -= (W_hidden_out_gradient_accumulator / mini_batch_size)
+        print(error_accumulator/mini_batch_size)
+
+def predict(x, W_in_hidden, W_hidden_out):
+    (a,b,c) = MLP_response(x, W_in_hidden, W_hidden_out)
+    return np.argmax(c)
+
 
 #main:
 X = preprocessing(x)
-x_train_test = X[:1000]
-#x_val = X[55000:]
-
-#print(x_train.shape)
-#print(x_val.shape)
-#W_in_hidden = initLayerWeights(28,X.shape[1])
-#W_hidden_out = initLayerWeights(10,28)
+x_train = X[:55000]
+x_val = X[55000:]
+y_val = y[55000:]
+W_in_hidden = initLayerWeights(28,X.shape[1])
+W_hidden_out = initLayerWeights(10,28)
+print('Initialization OK')
+stochastic_gradient_descent( x_train, 500, W_in_hidden, W_hidden_out)
+correct_clasification_qtt = 0
+for i in range(np.shape(x_val)[0]):
+    if(predict(x_val[i], W_in_hidden, W_hidden_out) == y_val[i]):
+        correct_clasification_qtt += 1
+print(correct_clasification_qtt/x_val.shape[0])
